@@ -1,0 +1,19 @@
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 30px;
+}
+
+.footer-note {
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+#footer-song {
+    color: var(--primary-color);
+    font-weight: 600;
+}

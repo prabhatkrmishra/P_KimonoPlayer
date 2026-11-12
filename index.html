@@ -5,12 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kimono Music</title>
-    <base href="/P_MPlayer/" />
+    <base href="/P_KimonoPlayer/" />
     <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
     <link rel="manifest" href="favicon/site.webmanifest">
-    <link rel="stylesheet" href="style/styles.css">
+    <link rel="stylesheet" href="style/base.css">
+    <link rel="stylesheet" href="style/layout.css">
+    <link rel="stylesheet" href="style/components/header.css">
+    <link rel="stylesheet" href="style/components/controls.css">
+    <link rel="stylesheet" href="style/components/song-list.css">
+    <link rel="stylesheet" href="style/components/now-playing.css">
+    <link rel="stylesheet" href="style/components/playlists.css">
+    <link rel="stylesheet" href="style/components/footer.css">
+    <link rel="stylesheet" href="style/components/notifications.css">
+    <link rel="stylesheet" href="style/utilities/scrollbar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap"
@@ -22,19 +31,13 @@
         <!-- Header Section -->
         <header>
             <div class="header-content">
-                <h1><i class="fas fa-music"></i>Kimono Music</h1>
-                <p class="tagline">Your music, your way - no interruptions</p>
-                <div class="header-controls">
-                    <div class="theme-toggle">
-                        <button id="theme-toggle" class="btn-theme">
-                            <i class="fas fa-moon"></i> Dark Mode
-                        </button>
-                    </div>
-                    <div class="search-container">
-                        <input type="text" id="global-search" placeholder="Search songs...">
-                        <i class="fas fa-search"></i>
-                    </div>
+                <div class="header-title">
+                    <h1><i class="fas fa-music"></i>Kimono Music</h1>
+                    <p class="tagline">Your music, your way - no interruptions</p>
                 </div>
+                <button id="theme-toggle" class="btn-theme" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i> Dark Mode
+                </button>
             </div>
         </header>
 
@@ -42,7 +45,7 @@
             <!-- Left Section: All Songs -->
             <section class="section all-songs-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-list-music"></i> All Songs</h2>
+                    <h2><i class="fas fa-compact-disc"></i> All Songs</h2>
                     <div class="filter-container">
                         <select id="genre-filter" class="filter-select">
                             <option value="all">All Genres</option>
@@ -161,7 +164,7 @@
 
     <audio id="audio-player" preload="metadata"></audio>
 
-    <script src="script/script.js"></script>
+    <script type="module" src="script/main.js"></script>
 </body>
 
 </html>
