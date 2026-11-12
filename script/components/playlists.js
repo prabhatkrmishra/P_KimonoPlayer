@@ -1,25 +1,37 @@
+
 import { $ } from '../utils/dom.js';
 import { getSongs, getState, getCurrentPlaylist, getFilteredPlaylists } from '../state/store.js';
 
-export function initPlaylists({
-    onSelectPlaylist,
-    onCreatePlaylist,
-    onRemoveSong,
-    onPlaySong,
-    onPlaylistSearchChange,
-}) {
+export function initPlaylists(callbacks) {
     const playlistsList = $('#playlists-list');
     const playlistSongs = $('#playlist-songs');
     const selectedPlaylistName = $('#selected-playlist-name');
-    const createPlaylistBtn = $('#create-playlist-btn');
+    const createPlaylistBtn = $('#create-playlist-modal-button');
     const newPlaylistName = $('#new-playlist-name');
     const playlistSearch = $('#playlist-search');
+
+    const createPlaylistModal = document.getElementById('create-playlist-modal');
+    const openModalBtn = document.getElementById('create-playlist-btn');
+    const closeModalBtn = document.getElementById('create-playlist-modal-close-button');
+
+    function openCreateModal() {
+        if (createPlaylistModal) {
+            createPlaylistModal.style.display = 'block';
+        }
+    }
+
+    function closeCreateModal() {
+        if (createPlaylistModal) {
+            createPlaylistModal.style.display = 'none';
+        }
+    }
 
     function renderPlaylists() {
         if (!playlistsList) return;
 
         const state = getState();
         const filteredPlaylists = getFilteredPlaylists();
+
         playlistsList.innerHTML = '';
 
         if (filteredPlaylists.length === 0) {
@@ -27,15 +39,20 @@ export function initPlaylists({
             return;
         }
 
-        filteredPlaylists.forEach((playlist) => {
+        for (const playlist of filteredPlaylists) {
             const playlistItem = document.createElement('div');
             playlistItem.className = 'playlist-item';
-            if (state.currentPlaylistId === playlist.id) {
+
+            const isOpen = state.currentPlaylistId === playlist.id;
+            if (isOpen) {
                 playlistItem.classList.add('active');
             }
 
             const songCount = playlist.songs.length;
-            const songText = songCount === 1 ? 'song' : 'songs';
+            let songText = 'songs';
+            if (songCount === 1) {
+                songText = 'song';
+            }
 
             playlistItem.innerHTML = `
                 <div class="playlist-info">
@@ -44,15 +61,19 @@ export function initPlaylists({
                 </div>
             `;
 
-            playlistItem.addEventListener('click', () => onSelectPlaylist(playlist.id));
+            playlistItem.addEventListener('click', function () {
+                callbacks.onSelectPlaylist(playlist.id);
+            });
+
             playlistsList.appendChild(playlistItem);
-        });
+        }
     }
 
     function renderPlaylistSongs() {
         if (!playlistSongs || !selectedPlaylistName) return;
 
         const currentPlaylist = getCurrentPlaylist();
+
         playlistSongs.innerHTML = '';
 
         if (!currentPlaylist) {
@@ -62,16 +83,20 @@ export function initPlaylists({
         }
 
         selectedPlaylistName.textContent = currentPlaylist.name;
-
         if (currentPlaylist.songs.length === 0) {
             playlistSongs.innerHTML = '<p class="empty-message">This playlist is empty. Add songs to it!</p>';
             return;
         }
 
-        const songs = getSongs();
-        const playlistSongObjects = songs.filter((song) => currentPlaylist.songs.includes(song.id));
+        const allSongs = getSongs();
+        const playlistSongObjects = [];
+        for (const song of allSongs) {
+            if (currentPlaylist.songs.includes(song.id)) {
+                playlistSongObjects.push(song);
+            }
+        }
 
-        playlistSongObjects.forEach((song) => {
+        for (const song of playlistSongObjects) {
             const songItem = document.createElement('div');
             songItem.className = 'playlist-song-item';
 
@@ -87,20 +112,21 @@ export function initPlaylists({
                 </div>
             `;
 
-            songItem.addEventListener('click', (e) => {
-                if (!e.target.closest('.remove-song-btn')) {
-                    onPlaySong(song.id);
+            songItem.addEventListener('click', function (event) {
+                const clickedOnRemoveButton = event.target.closest('.remove-song-btn');
+                if (!clickedOnRemoveButton) {
+                    callbacks.onPlaySong(song.id);
                 }
             });
 
             const removeBtn = songItem.querySelector('.remove-song-btn');
-            removeBtn?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onRemoveSong(currentPlaylist.id, song.id);
+            removeBtn?.addEventListener('click', function (event) {
+                event.stopPropagation();
+                callbacks.onRemoveSong(currentPlaylist.id, song.id);
             });
 
             playlistSongs.appendChild(songItem);
-        });
+        }
     }
 
     function render() {
@@ -108,25 +134,35 @@ export function initPlaylists({
         renderPlaylistSongs();
     }
 
-    createPlaylistBtn?.addEventListener('click', () => {
-        onCreatePlaylist(newPlaylistName?.value || '');
-        if (newPlaylistName) newPlaylistName.value = '';
+    createPlaylistBtn?.addEventListener('click', function () {
+        const name = newPlaylistName?.value || '';
+        callbacks.onCreatePlaylist(name);
+
+        if (newPlaylistName) {
+            newPlaylistName.value = '';
+        }
+        closeCreateModal();
     });
 
-    newPlaylistName?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            onCreatePlaylist(newPlaylistName.value || '');
+    openModalBtn?.addEventListener('click', openCreateModal);
+
+    closeModalBtn?.addEventListener('click', closeCreateModal);
+
+    newPlaylistName?.addEventListener('keypress', function (event) {
+        if (event.key === 'Enter') {
+            const name = newPlaylistName.value || '';
+            callbacks.onCreatePlaylist(name);
             newPlaylistName.value = '';
         }
     });
 
-    playlistSearch?.addEventListener('input', (e) => {
-        onPlaylistSearchChange(e.target.value);
+    playlistSearch?.addEventListener('input', function (event) {
+        callbacks.onPlaylistSearchChange(event.target.value);
     });
 
     return {
-        render,
-        renderPlaylists,
-        renderPlaylistSongs,
+        render: render,
+        renderPlaylists: renderPlaylists,
+        renderPlaylistSongs: renderPlaylistSongs,
     };
 }

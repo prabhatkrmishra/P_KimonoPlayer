@@ -5,5 +5,11 @@ export function formatTime(seconds) {
 
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+    let secsText = String(secs);
+    if (secs < 10) {
+        secsText = '0' + secsText;
+    }
+
+    return mins + ':' + secsText;
 }

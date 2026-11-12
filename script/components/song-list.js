@@ -1,7 +1,8 @@
+
 import { $ } from '../utils/dom.js';
 import { getState, getCurrentSong } from '../state/store.js';
 
-export function initSongList({ onGenreChange, onSongQueryChange, onSongSelect }) {
+export function initSongList(callbacks) {
     const songsList = $('#songs-list');
     const genreFilter = $('#genre-filter');
     const songSearch = $('#song-search');
@@ -11,6 +12,7 @@ export function initSongList({ onGenreChange, onSongQueryChange, onSongSelect })
 
         const state = getState();
         const currentSong = getCurrentSong();
+
         songsList.innerHTML = '';
 
         if (state.filteredSongs.length === 0) {
@@ -18,10 +20,12 @@ export function initSongList({ onGenreChange, onSongQueryChange, onSongSelect })
             return;
         }
 
-        state.filteredSongs.forEach((song) => {
+        for (const song of state.filteredSongs) {
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
-            if (currentSong && song.id === currentSong.id) {
+
+            const isCurrentSong = currentSong !== null && song.id === currentSong.id;
+            if (isCurrentSong) {
                 songItem.classList.add('playing');
             }
 
@@ -34,13 +38,21 @@ export function initSongList({ onGenreChange, onSongQueryChange, onSongSelect })
                 </div>
             `;
 
-            songItem.addEventListener('click', () => onSongSelect(song.id));
+            songItem.addEventListener('click', function () {
+                callbacks.onSongSelect(song.id);
+            });
+
             songsList.appendChild(songItem);
-        });
+        }
     }
 
-    genreFilter?.addEventListener('change', (e) => onGenreChange(e.target.value));
-    songSearch?.addEventListener('input', (e) => onSongQueryChange(e.target.value));
+    genreFilter?.addEventListener('change', function (event) {
+        callbacks.onGenreChange(event.target.value);
+    });
 
-    return { render };
+    songSearch?.addEventListener('input', function (event) {
+        callbacks.onSongQueryChange(event.target.value);
+    });
+
+    return { render: render };
 }

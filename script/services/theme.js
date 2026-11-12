@@ -1,4 +1,7 @@
+
 import { $ } from '../utils/dom.js';
+
+const THEME_ATTRIBUTE = 'data-theme';
 
 export function initTheme() {
     loadThemeFromStorage();
@@ -10,36 +13,51 @@ export function initTheme() {
 }
 
 export function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    applyTheme(newTheme);
+    const currentTheme = document.documentElement.getAttribute(THEME_ATTRIBUTE) || 'light';
 
-    try {
-        localStorage.setItem('theme', newTheme);
-    } catch {
-        // ignore storage failures
+    let newTheme = 'light';
+    if (currentTheme === 'light') {
+        newTheme = 'dark';
     }
+
+    applyTheme(newTheme);
+    saveThemeToStorage(newTheme);
 }
 
 export function loadThemeFromStorage() {
     let savedTheme = 'light';
+
     try {
-        savedTheme = localStorage.getItem('theme') || 'light';
-    } catch {
+        savedTheme = localStorage.getItem('theme');
+    } catch (error) {
+        savedTheme = 'light';
+    }
+
+    if (!savedTheme) {
         savedTheme = 'light';
     }
 
     applyTheme(savedTheme);
 }
 
+function saveThemeToStorage(theme) {
+    try {
+        localStorage.setItem('theme', theme);
+    } catch (error) {
+    }
+}
+
 function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, theme);
 
     const themeToggle = $('#theme-toggle');
-    if (!themeToggle) return;
+    if (!themeToggle) {
+        return;
+    }
 
-    themeToggle.innerHTML = theme === 'dark'
+    const isDark = theme === 'dark';
+    themeToggle.innerHTML = isDark
         ? '<i class="fas fa-sun"></i> Light Mode'
         : '<i class="fas fa-moon"></i> Dark Mode';
-    themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    themeToggle.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
 }

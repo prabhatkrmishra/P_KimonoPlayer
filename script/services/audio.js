@@ -1,68 +1,84 @@
+
 import { $ } from '../utils/dom.js';
 
 export function createAudioService() {
     const audio = $('#audio-player');
+
+    function load(source) {
+        if (!audio) return;
+        audio.src = source;
+        audio.load();
+    }
+
+    function play() {
+        if (!audio) return Promise.resolve();
+        return audio.play();
+    }
+
+    function pause() {
+        if (!audio) return;
+        audio.pause();
+    }
+
+    function seek(time) {
+        if (!audio) return;
+        if (!Number.isFinite(time)) return;
+
+        let safeTime = time;
+        if (safeTime < 0) {
+            safeTime = 0;
+        }
+        if (Number.isFinite(audio.duration) && safeTime > audio.duration) {
+            safeTime = audio.duration;
+        }
+        audio.currentTime = safeTime;
+    }
+
+    function getCurrentTime() {
+        if (!audio) return 0;
+        return audio.currentTime || 0;
+    }
+
+    function getDuration() {
+        if (!audio) return 0;
+        return audio.duration || 0;
+    }
+
+    function addSingleListener(eventName, oldHandler, newHandler) {
+        if (!audio) return;
+        if (oldHandler) {
+            audio.removeEventListener(eventName, oldHandler);
+        }
+        audio.addEventListener(eventName, newHandler);
+        return newHandler;
+    }
+
     let timeUpdateHandler = null;
     let endedHandler = null;
     let metadataHandler = null;
 
+    function onTimeUpdate(handler) {
+        timeUpdateHandler = addSingleListener('timeupdate', timeUpdateHandler, handler);
+    }
+
+    function onEnded(handler) {
+        endedHandler = addSingleListener('ended', endedHandler, handler);
+    }
+
+    function onLoadedMetadata(handler) {
+        metadataHandler = addSingleListener('loadedmetadata', metadataHandler, handler);
+    }
+
     return {
         element: audio,
-
-        load(source) {
-            if (!audio) return;
-            audio.src = source;
-            audio.load();
-        },
-
-        play() {
-            if (!audio) return Promise.resolve();
-            return audio.play();
-        },
-
-        pause() {
-            if (!audio) return;
-            audio.pause();
-        },
-
-        seek(time) {
-            if (!audio || !Number.isFinite(time)) return;
-            audio.currentTime = Math.max(0, Math.min(time, Number.isFinite(audio.duration) ? audio.duration : time));
-        },
-
-        getCurrentTime() {
-            return audio?.currentTime || 0;
-        },
-
-        getDuration() {
-            return audio?.duration || 0;
-        },
-
-        onTimeUpdate(handler) {
-            if (!audio) return;
-            if (timeUpdateHandler) {
-                audio.removeEventListener('timeupdate', timeUpdateHandler);
-            }
-            timeUpdateHandler = handler;
-            audio.addEventListener('timeupdate', timeUpdateHandler);
-        },
-
-        onEnded(handler) {
-            if (!audio) return;
-            if (endedHandler) {
-                audio.removeEventListener('ended', endedHandler);
-            }
-            endedHandler = handler;
-            audio.addEventListener('ended', endedHandler);
-        },
-
-        onLoadedMetadata(handler) {
-            if (!audio) return;
-            if (metadataHandler) {
-                audio.removeEventListener('loadedmetadata', metadataHandler);
-            }
-            metadataHandler = handler;
-            audio.addEventListener('loadedmetadata', metadataHandler);
-        },
+        load: load,
+        play: play,
+        pause: pause,
+        seek: seek,
+        getCurrentTime: getCurrentTime,
+        getDuration: getDuration,
+        onTimeUpdate: onTimeUpdate,
+        onEnded: onEnded,
+        onLoadedMetadata: onLoadedMetadata,
     };
 }

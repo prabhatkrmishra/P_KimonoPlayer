@@ -1,8 +1,9 @@
+
 import { $ } from '../utils/dom.js';
 import { formatTime } from '../utils/format.js';
 import { getCurrentSong, getState } from '../state/store.js';
 
-export function initNowPlaying({ onTogglePlay, onNext, onPrev, onSeek, onAddToPlaylist }) {
+export function initNowPlaying(callbacks) {
     const songCard = $('#song-card');
     const currentSongImg = $('#current-song-img');
     const currentSongName = $('#current-song-name');
@@ -27,78 +28,128 @@ export function initNowPlaying({ onTogglePlay, onNext, onPrev, onSeek, onAddToPl
             currentSongImg.src = song.img;
             currentSongImg.alt = song.name;
         }
-        if (currentSongName) currentSongName.textContent = song.name;
-        if (currentSongArtist) currentSongArtist.textContent = song.artist;
-        if (currentSongGenre) currentSongGenre.textContent = song.genre;
-        if (footerSong) footerSong.textContent = `${song.name} by ${song.artist}`;
+        if (currentSongName) {
+            currentSongName.textContent = song.name;
+        }
+        if (currentSongArtist) {
+            currentSongArtist.textContent = song.artist;
+        }
+        if (currentSongGenre) {
+            currentSongGenre.textContent = song.genre;
+        }
+        if (footerSong) {
+            footerSong.textContent = song.name + ' by ' + song.artist;
+        }
     }
 
     function renderPlaybackState() {
-        const { isPlaying } = getState();
+        const isPlaying = getState().isPlaying;
 
         if (playBtn) {
-            playBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-            playBtn.title = isPlaying ? 'Pause' : 'Play';
+            if (isPlaying) {
+                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                playBtn.title = 'Pause';
+            } else {
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                playBtn.title = 'Play';
+            }
         }
 
         songCard?.classList.toggle('playing', isPlaying);
     }
 
     function renderProgress(currentTime, duration) {
-        if (Number.isFinite(duration) && duration > 0) {
+        const durationIsKnown = Number.isFinite(duration) && duration > 0;
+
+        if (durationIsKnown) {
             const percent = (currentTime / duration) * 100;
-            if (progress) progress.style.width = `${percent}%`;
-            if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTime);
-            if (totalTimeEl) totalTimeEl.textContent = formatTime(duration);
+            if (progress) {
+                progress.style.width = percent + '%';
+            }
+            if (currentTimeEl) {
+                currentTimeEl.textContent = formatTime(currentTime);
+            }
+            if (totalTimeEl) {
+                totalTimeEl.textContent = formatTime(duration);
+            }
         } else {
-            if (progress) progress.style.width = '0%';
-            if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTime || 0);
-            if (totalTimeEl) totalTimeEl.textContent = '0:00';
+            if (progress) {
+                progress.style.width = '0%';
+            }
+            if (currentTimeEl) {
+                currentTimeEl.textContent = formatTime(currentTime || 0);
+            }
+            if (totalTimeEl) {
+                totalTimeEl.textContent = '0:00';
+            }
         }
     }
 
     function renderPlaylistOptions(playlists) {
         if (!playlistSelect) return;
+
         const selectedValue = playlistSelect.value;
 
         playlistSelect.innerHTML = '<option value="">Add to Playlist</option>';
 
-        playlists.forEach((playlist) => {
+        for (const playlist of playlists) {
             const option = document.createElement('option');
             option.value = String(playlist.id);
             option.textContent = playlist.name;
             playlistSelect.appendChild(option);
-        });
+        }
 
-        // Preserve the user's selection across re-renders
-        if (selectedValue && playlists.some((playlist) => String(playlist.id) === selectedValue)) {
+        let selectionStillExists = false;
+        for (const playlist of playlists) {
+            if (String(playlist.id) === selectedValue) {
+                selectionStillExists = true;
+            }
+        }
+        if (selectedValue && selectionStillExists) {
             playlistSelect.value = selectedValue;
         }
     }
 
     function getSelectedPlaylistId() {
-        if (!playlistSelect || !playlistSelect.value) return null;
+        if (!playlistSelect) return null;
+        if (!playlistSelect.value) return null;
+
         const id = parseInt(playlistSelect.value, 10);
-        return Number.isNaN(id) ? null : id;
+        if (Number.isNaN(id)) return null;
+        return id;
     }
 
-    playBtn?.addEventListener('click', () => onTogglePlay());
-    nextBtn?.addEventListener('click', () => onNext());
-    prevBtn?.addEventListener('click', () => onPrev());
-
-    progressBar?.addEventListener('click', (e) => {
-        const rect = progressBar.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const percent = rect.width ? clickX / rect.width : 0;
-        onSeek(percent);
+    playBtn?.addEventListener('click', function () {
+        callbacks.onTogglePlay();
     });
 
-    addToPlaylistBtn?.addEventListener('click', () => onAddToPlaylist(getSelectedPlaylistId()));
+    nextBtn?.addEventListener('click', function () {
+        callbacks.onNext();
+    });
+
+    prevBtn?.addEventListener('click', function () {
+        callbacks.onPrev();
+    });
+
+    progressBar?.addEventListener('click', function (event) {
+        const barRect = progressBar.getBoundingClientRect();
+        const clickX = event.clientX - barRect.left;
+
+        let percent = 0;
+        if (barRect.width > 0) {
+            percent = clickX / barRect.width;
+        }
+        callbacks.onSeek(percent);
+    });
+
+    addToPlaylistBtn?.addEventListener('click', function () {
+        callbacks.onAddToPlaylist(getSelectedPlaylistId());
+    });
 
     return {
-        renderSong,
-        renderPlaybackState,
-        renderProgress,
-        renderPlaylistOptions,
+        renderSong: renderSong,
+        renderPlaybackState: renderPlaybackState,
+        renderProgress: renderProgress,
+        renderPlaylistOptions: renderPlaylistOptions,
     };
 }

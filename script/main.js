@@ -1,3 +1,4 @@
+
 import {
     getState,
     getSongs,
@@ -19,7 +20,7 @@ import { initNowPlaying } from './components/now-playing.js';
 import { initPlaylists } from './components/playlists.js';
 import { $ } from './utils/dom.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
     loadPlaylistsFromStorage();
     applySongFilter();
     initTheme();
@@ -27,50 +28,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const player = createPlayerService();
     const songSearch = $('#song-search');
 
-    // Selection updates the UI immediately; playback start is awaited separately
-    // so the Now Playing card never lags behind a slow audio source.
     async function selectAndPlay(songId) {
         player.selectSongById(songId);
-        const playing = player.play();
+        const playPromise = player.play();
         renderAll();
-        await playing;
+        await playPromise;
         renderPlaybackState();
         renderSongList();
     }
 
     async function skipTo(direction) {
-        const skipping = direction === 'next' ? player.playNext() : player.playPrev();
+        let skipPromise;
+        if (direction === 'next') {
+            skipPromise = player.playNext();
+        } else {
+            skipPromise = player.playPrev();
+        }
+
         renderAll();
-        await skipping;
+        await skipPromise;
         renderPlaybackState();
     }
 
     const songList = initSongList({
-        onGenreChange: (genre) => {
-            setSongFilter({ genre });
+        onGenreChange: function (genre) {
+            setSongFilter({ genre: genre });
             renderAll();
         },
-        onSongQueryChange: (songQuery) => {
-            if (songSearch && songSearch.value !== songQuery) songSearch.value = songQuery;
-            setSongFilter({ songQuery });
+        onSongQueryChange: function (songQuery) {
+            if (songSearch && songSearch.value !== songQuery) {
+                songSearch.value = songQuery;
+            }
+            setSongFilter({ songQuery: songQuery });
             renderAll();
         },
-        onSongSelect: (songId) => selectAndPlay(songId),
+        onSongSelect: function (songId) {
+            selectAndPlay(songId);
+        },
     });
 
     const nowPlaying = initNowPlaying({
-        onTogglePlay: async () => {
+        onTogglePlay: async function () {
             await player.togglePlayPause();
             renderPlaybackState();
             renderSongList();
         },
-        onNext: () => skipTo('next'),
-        onPrev: () => skipTo('prev'),
-        onSeek: (percent) => {
+        onNext: function () {
+            skipTo('next');
+        },
+        onPrev: function () {
+            skipTo('prev');
+        },
+        onSeek: function (percent) {
             player.seekByPercent(percent);
             nowPlaying.renderProgress(player.getCurrentTime(), player.getDuration());
         },
-        onAddToPlaylist: (playlistId) => {
+        onAddToPlaylist: function (playlistId) {
             if (!playlistId) {
                 showNotification('Please select a playlist first!');
                 return;
@@ -80,8 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentSong) return;
 
             const result = addSongToPlaylist(playlistId, currentSong.id);
-            const playlistsState = getState().playlists;
-            const playlist = playlistsState.find((p) => p.id === playlistId);
 
             if (!result.ok) {
                 if (result.reason === 'exists') {
@@ -92,20 +103,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const playlist = getState().playlists.find(function (p) {
+                return p.id === playlistId;
+            });
             if (playlist) {
-                showNotification(`Added "${currentSong.name}" to "${playlist.name}"`);
+                showNotification('Added "' + currentSong.name + '" to "' + playlist.name + '"');
             }
             renderPlaylistsAndOptions();
         },
     });
 
     const playlists = initPlaylists({
-        onSelectPlaylist: (playlistId) => {
+        onSelectPlaylist: function (playlistId) {
             setCurrentPlaylistId(playlistId);
             renderPlaylistsAndOptions();
         },
-        onCreatePlaylist: (name) => {
+        onCreatePlaylist: function (name) {
             const result = createPlaylist(name);
+
             if (!result.ok) {
                 if (result.reason === 'empty') {
                     showNotification('Please enter a playlist name!');
@@ -115,22 +130,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            showNotification(`Created new playlist: "${result.playlist.name}"`);
+            showNotification('Created new playlist: "' + result.playlist.name + '"');
             renderPlaylistsAndOptions();
         },
-        onRemoveSong: (playlistId, songId) => {
+        onRemoveSong: function (playlistId, songId) {
             const result = removeSongFromPlaylist(playlistId, songId);
             if (!result.ok) return;
 
-            const song = getSongs().find((s) => s.id === songId);
-            const playlist = getState().playlists.find((p) => p.id === playlistId);
+            const song = getSongs().find(function (s) {
+                return s.id === songId;
+            });
+            const playlist = getState().playlists.find(function (p) {
+                return p.id === playlistId;
+            });
             if (song && playlist) {
-                showNotification(`Removed "${song.name}" from "${playlist.name}"`);
+                showNotification('Removed "' + song.name + '" from "' + playlist.name + '"');
             }
             renderPlaylistsAndOptions();
         },
-        onPlaySong: (songId) => selectAndPlay(songId),
-        onPlaylistSearchChange: (query) => {
+        onPlaySong: function (songId) {
+            selectAndPlay(songId);
+        },
+        onPlaylistSearchChange: function (query) {
             setPlaylistQuery(query);
             playlists.renderPlaylists();
         },
@@ -157,39 +178,43 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSongList();
     }
 
-    player.onTimeUpdate(() => {
+    player.onTimeUpdate(function () {
         nowPlaying.renderProgress(player.getCurrentTime(), player.getDuration());
     });
 
-    player.onLoadedMetadata(() => {
+    player.onLoadedMetadata(function () {
         nowPlaying.renderProgress(player.getCurrentTime(), player.getDuration());
     });
 
-    player.onEnded(() => skipTo('next'));
+    player.onEnded(function () {
+        skipTo('next');
+    });
 
-    document.addEventListener('keydown', async (e) => {
-        const target = e.target;
+    document.addEventListener('keydown', async function (event) {
+        const target = event.target;
+
         const isTypingTarget = target instanceof HTMLElement && target.matches('input, textarea, select');
-        // Let focused buttons (except the play button) receive Space for their own action
+
         const isOtherButton = target instanceof HTMLElement
             && target.matches('button')
             && target.id !== 'play-btn';
 
-        if (e.code === 'Space' && !isTypingTarget && !isOtherButton) {
-            e.preventDefault();
+        if (event.code === 'Space' && !isTypingTarget && !isOtherButton) {
+            event.preventDefault();
             await player.togglePlayPause();
             renderPlaybackState();
             renderSongList();
-        }        if (e.code === 'ArrowRight' && !isTypingTarget) {
+        }
+
+        if (event.code === 'ArrowRight' && !isTypingTarget) {
             skipTo('next');
         }
 
-        if (e.code === 'ArrowLeft' && !isTypingTarget) {
+        if (event.code === 'ArrowLeft' && !isTypingTarget) {
             skipTo('prev');
         }
     });
 
-    // Initialize current song and UI
     player.renderOrLoadCurrentSong();
     renderAll();
 });

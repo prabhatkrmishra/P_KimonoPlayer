@@ -1,3 +1,4 @@
+
 import { createAudioService } from './audio.js';
 import {
     getSongs,
@@ -18,31 +19,35 @@ export function createPlayerService() {
     }
 
     function selectSongById(songId) {
-        const index = songs.findIndex((song) => song.id === songId);
-        if (index === -1) return false;
-
-        setCurrentSongIndex(index);
-        renderOrLoadCurrentSong();
-        return true;
+        for (let i = 0; i < songs.length; i++) {
+            if (songs[i].id === songId) {
+                setCurrentSongIndex(i);
+                renderOrLoadCurrentSong();
+                return true;
+            }
+        }
+        return false;
     }
 
     function selectSongByIndex(index) {
-        if (index < 0 || index >= songs.length) return false;
+        if (index < 0 || index >= songs.length) {
+            return false;
+        }
         setCurrentSongIndex(index);
         renderOrLoadCurrentSong();
         return true;
     }
 
-    async function play() {
-        try {
-            await audioService.play();
-            setIsPlaying(true);
-            return true;
-        } catch {
-            // Playback can fail (e.g. autoplay restrictions or unavailable source)
-            setIsPlaying(false);
-            return false;
-        }
+    function play() {
+        return audioService.play()
+            .then(function () {
+                setIsPlaying(true);
+                return true;
+            })
+            .catch(function () {
+                setIsPlaying(false);
+                return false;
+            });
     }
 
     function pause() {
@@ -50,31 +55,36 @@ export function createPlayerService() {
         setIsPlaying(false);
     }
 
-    async function togglePlayPause() {
-        const state = getState();
-        if (state.isPlaying) {
+    function togglePlayPause() {
+        if (getState().isPlaying) {
             pause();
-            return false;
+            return Promise.resolve(false);
         }
         return play();
     }
 
-    async function playNext() {
-        const state = getState();
-        const nextIndex = (state.currentSongIndex + 1) % songs.length;
+    function playNext() {
+        let nextIndex = getState().currentSongIndex + 1;
+        if (nextIndex >= songs.length) {
+            nextIndex = 0;
+        }
         selectSongByIndex(nextIndex);
-        if (state.isPlaying) {
-            await play();
+
+        if (getState().isPlaying) {
+            play();
         }
         return nextIndex;
     }
 
-    async function playPrev() {
-        const state = getState();
-        const prevIndex = (state.currentSongIndex - 1 + songs.length) % songs.length;
+    function playPrev() {
+        let prevIndex = getState().currentSongIndex - 1;
+        if (prevIndex < 0) {
+            prevIndex = songs.length - 1;
+        }
         selectSongByIndex(prevIndex);
-        if (state.isPlaying) {
-            await play();
+
+        if (getState().isPlaying) {
+            play();
         }
         return prevIndex;
     }
@@ -85,9 +95,15 @@ export function createPlayerService() {
 
     function seekByPercent(percent) {
         const duration = audioService.getDuration();
-        if (!Number.isFinite(duration) || duration <= 0) return;
-        const clamped = Math.max(0, Math.min(percent, 1));
-        audioService.seek(clamped * duration);
+        if (!Number.isFinite(duration) || duration <= 0) {
+            return;
+        }
+
+        let safePercent = percent;
+        if (safePercent < 0) safePercent = 0;
+        if (safePercent > 1) safePercent = 1;
+
+        audioService.seek(safePercent * duration);
     }
 
     function onTimeUpdate(handler) {
@@ -111,20 +127,20 @@ export function createPlayerService() {
     }
 
     return {
-        renderOrLoadCurrentSong,
-        selectSongById,
-        selectSongByIndex,
-        play,
-        pause,
-        togglePlayPause,
-        playNext,
-        playPrev,
-        seekTo,
-        seekByPercent,
-        onTimeUpdate,
-        onLoadedMetadata,
-        onEnded,
-        getCurrentTime,
-        getDuration,
+        renderOrLoadCurrentSong: renderOrLoadCurrentSong,
+        selectSongById: selectSongById,
+        selectSongByIndex: selectSongByIndex,
+        play: play,
+        pause: pause,
+        togglePlayPause: togglePlayPause,
+        playNext: playNext,
+        playPrev: playPrev,
+        seekTo: seekTo,
+        seekByPercent: seekByPercent,
+        onTimeUpdate: onTimeUpdate,
+        onLoadedMetadata: onLoadedMetadata,
+        onEnded: onEnded,
+        getCurrentTime: getCurrentTime,
+        getDuration: getDuration,
     };
 }

@@ -1,3 +1,4 @@
+
 import { songs } from '../data/songs.js';
 
 const DEFAULT_PLAYLISTS = [
@@ -6,16 +7,43 @@ const DEFAULT_PLAYLISTS = [
     { id: 3, name: 'Chill Vibes', songs: [6, 9, 14, 15] },
 ];
 
+function getDefaultPlaylists() {
+    const copy = [];
+    for (const playlist of DEFAULT_PLAYLISTS) {
+        copy.push({
+            id: playlist.id,
+            name: playlist.name,
+            songs: playlist.songs.slice(),
+        });
+    }
+    return copy;
+}
+
+function findPlaylist(playlistId) {
+    for (const playlist of state.playlists) {
+        if (playlist.id === playlistId) {
+            return playlist;
+        }
+    }
+    return null;
+}
+
+function nextPlaylistId() {
+    let nextId = 1;
+    for (const playlist of state.playlists) {
+        if (playlist.id >= nextId) {
+            nextId = playlist.id + 1;
+        }
+    }
+    return nextId;
+}
+
 const state = {
     currentSongIndex: 0,
     isPlaying: false,
     currentPlaylistId: null,
-    playlists: [
-        { id: 1, name: "Favorites", songs: [1, 3, 5, 7] },
-        { id: 2, name: "Workout", songs: [2, 4, 8, 12] },
-        { id: 3, name: "Chill Vibes", songs: [6, 9, 14, 15] },
-    ],
-    filteredSongs: [...songs],
+    playlists: getDefaultPlaylists(),
+    filteredSongs: songs.slice(),
     filters: {
         genre: 'all',
         songQuery: '',
@@ -25,6 +53,19 @@ const state = {
 
 const listeners = new Set();
 
+export function subscribe(listener) {
+    listeners.add(listener);
+    return function () {
+        listeners.delete(listener);
+    };
+}
+
+export function notify() {
+    for (const listener of listeners) {
+        listener(state);
+    }
+}
+
 export function getState() {
     return state;
 }
@@ -33,26 +74,28 @@ export function getSongs() {
     return songs;
 }
 
-export function subscribe(listener) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-}
-
-export function notify() {
-    listeners.forEach((listener) => listener(state));
-}
-
 export function getCurrentSong() {
-    return songs[state.currentSongIndex] || null;
+    if (state.currentSongIndex >= 0 && state.currentSongIndex < songs.length) {
+        return songs[state.currentSongIndex];
+    }
+    return null;
 }
 
 export function getCurrentPlaylist() {
-    return state.playlists.find((playlist) => playlist.id === state.currentPlaylistId) || null;
+    return findPlaylist(state.currentPlaylistId);
 }
 
 export function getFilteredPlaylists() {
     const query = state.filters.playlistQuery.toLowerCase();
-    return state.playlists.filter((playlist) => playlist.name.toLowerCase().includes(query));
+    const result = [];
+
+    for (const playlist of state.playlists) {
+        const name = playlist.name.toLowerCase();
+        if (name.includes(query)) {
+            result.push(playlist);
+        }
+    }
+    return result;
 }
 
 export function setCurrentSongIndex(index) {
@@ -69,68 +112,87 @@ export function setCurrentPlaylistId(playlistId) {
     state.currentPlaylistId = playlistId;
 }
 
-export function setSongFilter({ genre, songQuery } = {}) {
-    if (typeof genre === 'string') {
-        state.filters.genre = genre;
+export function setSongFilter(changes) {
+    if (!changes) {
+        changes = {};
     }
-    if (typeof songQuery === 'string') {
-        state.filters.songQuery = songQuery;
+
+    if (typeof changes.genre === 'string') {
+        state.filters.genre = changes.genre;
     }
+    if (typeof changes.songQuery === 'string') {
+        state.filters.songQuery = changes.songQuery;
+    }
+
     applySongFilter();
 }
 
 export function setPlaylistQuery(playlistQuery) {
-    state.filters.playlistQuery = playlistQuery || '';
+    if (!playlistQuery) {
+        playlistQuery = '';
+    }
+    state.filters.playlistQuery = playlistQuery;
 }
 
 export function applySongFilter() {
     const genre = state.filters.genre;
     const query = state.filters.songQuery.trim().toLowerCase();
+    const result = [];
 
-    state.filteredSongs = songs.filter((song) => {
-        const genreMatch = genre === 'all' || song.genre === genre;
-        const searchMatch =
-            query === '' ||
-            song.name.toLowerCase().includes(query) ||
-            song.artist.toLowerCase().includes(query);
-        return genreMatch && searchMatch;
-    });
+    for (const song of songs) {
+        const genreMatches = genre === 'all' || song.genre === genre;
+
+        const searchMatches = query === ''
+            || song.name.toLowerCase().includes(query)
+            || song.artist.toLowerCase().includes(query);
+
+        if (genreMatches && searchMatches) {
+            result.push(song);
+        }
+    }
+
+    state.filteredSongs = result;
 }
 
 export function createPlaylist(name) {
-    const trimmed = name.trim();
-    if (!trimmed) {
+    const trimmedName = name.trim();
+
+    if (trimmedName === '') {
         return { ok: false, reason: 'empty', playlist: null };
     }
 
-    if (state.playlists.some((playlist) => playlist.name.toLowerCase() === trimmed.toLowerCase())) {
-        return { ok: false, reason: 'duplicate', playlist: null };
+    for (const playlist of state.playlists) {
+        if (playlist.name.toLowerCase() === trimmedName.toLowerCase()) {
+            return { ok: false, reason: 'duplicate', playlist: null };
+        }
     }
 
-    const nextId = state.playlists.length > 0 ? Math.max(...state.playlists.map((p) => p.id)) + 1 : 1;
-    const playlist = { id: nextId, name: trimmed, songs: [] };
+    const playlist = { id: nextPlaylistId(), name: trimmedName, songs: [] };
     state.playlists.push(playlist);
     savePlaylistsToStorage();
-    return { ok: true, reason: null, playlist };
+    return { ok: true, reason: null, playlist: playlist };
 }
 
 export function addSongToPlaylist(playlistId, songId) {
-    const playlist = state.playlists.find((p) => p.id === playlistId);
-    if (!playlist) {
+    const playlist = findPlaylist(playlistId);
+
+    if (playlist === null) {
         return { ok: false, reason: 'missing' };
     }
+
     if (playlist.songs.includes(songId)) {
         return { ok: false, reason: 'exists' };
     }
 
     playlist.songs.push(songId);
     savePlaylistsToStorage();
-    return { ok: true, reason: null, playlist };
+    return { ok: true, reason: null, playlist: playlist };
 }
 
 export function removeSongFromPlaylist(playlistId, songId) {
-    const playlist = state.playlists.find((p) => p.id === playlistId);
-    if (!playlist) {
+    const playlist = findPlaylist(playlistId);
+
+    if (playlist === null) {
         return { ok: false, reason: 'missing' };
     }
 
@@ -141,45 +203,64 @@ export function removeSongFromPlaylist(playlistId, songId) {
 
     playlist.songs.splice(songIndex, 1);
     savePlaylistsToStorage();
-    return { ok: true, reason: null, playlist };
+    return { ok: true, reason: null, playlist: playlist };
 }
+
+const STORAGE_KEY = 'musicPlayerPlaylists';
 
 export function savePlaylistsToStorage() {
     try {
-        localStorage.setItem('musicPlayerPlaylists', JSON.stringify(state.playlists));
-    } catch {
-        // ignore storage failures to keep app usable
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.playlists));
+    } catch (error) {
+        console.log(error);
     }
 }
 
 export function loadPlaylistsFromStorage() {
     try {
-        const savedPlaylists = localStorage.getItem('musicPlayerPlaylists');
-        if (!savedPlaylists) {
-            state.playlists = DEFAULT_PLAYLISTS.map((playlist) => ({ ...playlist, songs: [...playlist.songs] }));
+        const savedText = localStorage.getItem(STORAGE_KEY);
+
+        if (!savedText) {
+            state.playlists = getDefaultPlaylists();
             return;
         }
 
-        const parsed = JSON.parse(savedPlaylists);
+        const parsed = JSON.parse(savedText);
+
         if (!Array.isArray(parsed)) {
-            state.playlists = DEFAULT_PLAYLISTS.map((playlist) => ({ ...playlist, songs: [...playlist.songs] }));
+            state.playlists = getDefaultPlaylists();
             return;
         }
 
-        state.playlists = parsed
-            .filter((playlist) => playlist && typeof playlist.id === 'number' && typeof playlist.name === 'string')
-            .map((playlist) => ({
-                id: playlist.id,
-                name: playlist.name,
-                songs: Array.isArray(playlist.songs)
-                    ? playlist.songs.filter((id) => typeof id === 'number')
-                    : [],
-            }));
+        const cleaned = [];
+        for (const playlist of parsed) {
+            const isValid = playlist
+                && typeof playlist.id === 'number'
+                && typeof playlist.name === 'string';
 
-        if (state.playlists.length === 0) {
-            state.playlists = DEFAULT_PLAYLISTS.map((playlist) => ({ ...playlist, songs: [...playlist.songs] }));
+            if (!isValid) {
+                continue;
+            }
+
+            const songIds = [];
+            if (Array.isArray(playlist.songs)) {
+                for (const id of playlist.songs) {
+                    if (typeof id === 'number') {
+                        songIds.push(id);
+                    }
+                }
+            }
+
+            cleaned.push({ id: playlist.id, name: playlist.name, songs: songIds });
         }
-    } catch {
-        state.playlists = DEFAULT_PLAYLISTS.map((playlist) => ({ ...playlist, songs: [...playlist.songs] }));
+
+        if (cleaned.length === 0) {
+            state.playlists = getDefaultPlaylists();
+            return;
+        }
+
+        state.playlists = cleaned;
+    } catch (error) {
+        state.playlists = getDefaultPlaylists();
     }
 }
