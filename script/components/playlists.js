@@ -16,7 +16,7 @@ export function initPlaylists(callbacks) {
 
     function openCreateModal() {
         if (createPlaylistModal) {
-            createPlaylistModal.style.display = 'block';
+            createPlaylistModal.style.display = 'flex';
         }
     }
 
