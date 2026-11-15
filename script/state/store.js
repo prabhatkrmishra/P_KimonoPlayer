@@ -19,6 +19,19 @@ function getDefaultPlaylists() {
     return copy;
 }
 
+const state = {
+    currentSongIndex: 0,
+    isPlaying: false,
+    currentPlaylistId: null,
+    playlists: getDefaultPlaylists(),
+    filteredSongs: songs.slice(),
+    filters: {
+        genre: 'all',
+        songQuery: '',
+        playlistQuery: '',
+    },
+};
+
 function findPlaylist(playlistId) {
     for (const playlist of state.playlists) {
         if (playlist.id === playlistId) {
@@ -37,19 +50,6 @@ function nextPlaylistId() {
     }
     return nextId;
 }
-
-const state = {
-    currentSongIndex: 0,
-    isPlaying: false,
-    currentPlaylistId: null,
-    playlists: getDefaultPlaylists(),
-    filteredSongs: songs.slice(),
-    filters: {
-        genre: 'all',
-        songQuery: '',
-        playlistQuery: '',
-    },
-};
 
 const listeners = new Set();
 
@@ -172,6 +172,12 @@ export function createPlaylist(name) {
     savePlaylistsToStorage();
     return { ok: true, reason: null, playlist: playlist };
 }
+
+export function deletePlayList(playlistId) {
+    state.playlists = state.playlists.filter((item) => item.id != playlistId);;
+    savePlaylistsToStorage();
+}
+
 
 export function addSongToPlaylist(playlistId, songId) {
     const playlist = findPlaylist(playlistId);

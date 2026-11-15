@@ -6,6 +6,7 @@ import {
     setSongFilter,
     setPlaylistQuery,
     setCurrentPlaylistId,
+    deletePlayList,
     loadPlaylistsFromStorage,
     applySongFilter,
     createPlaylist,
@@ -131,6 +132,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showNotification('Created new playlist: "' + result.playlist.name + '"');
+            renderPlaylistsAndOptions();
+        },
+        onDeletePlayList: function (playlistId) {
+            deletePlayList(playlistId);
             renderPlaylistsAndOptions();
         },
         onRemoveSong: function (playlistId, songId) {

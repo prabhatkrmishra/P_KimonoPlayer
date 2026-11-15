@@ -150,7 +150,7 @@
                     <div class="create-playlist-modal-content">
                         <div class="create-playlist-modal-inner-content">
                             <div class="create-playlist">
-                                <input style=" box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);" type="text"
+                                <input style="box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);" type="text"
                                     id="new-playlist-name" placeholder="New playlist name">
                             </div>
                             <div class="create-playlist-modal-button-container">
@@ -166,12 +166,19 @@
                     <div class="playlists-list" id="playlists-list">
                         <!-- Playlists will be rendered here -->
                     </div>
-
-                    <div class="playlist-songs-container">
-                        <h3 id="selected-playlist-name">Select a Playlist</h3>
-                        <div class="playlist-songs" id="playlist-songs">
-                            <!-- Songs in selected playlist will be rendered here -->
-                            <p class="empty-message">No playlist selected. Select a playlist to view its songs.</p>
+                    <div id="playlist-songs-modal" class="playlist-songs-modal">
+                        <div class="playlist-songs-container">
+                            <div class="playlist-songs-container-header">
+                                <h3 id="selected-playlist-name">Select a Playlist</h3>
+                                <button id="close-playlist-songlist-modal" class="close-playlist-songlist-modal"
+                                    title="Close the playlist">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="playlist-songs" id="playlist-songs">
+                                <!-- Songs in selected playlist will be rendered here -->
+                                <p class="empty-message">No playlist selected. Select a playlist to view its songs.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

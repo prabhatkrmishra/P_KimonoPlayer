@@ -1,6 +1,6 @@
 /* All Songs Section */
 .songs-list {
-    max-height: 69vh;
+    height: 69vh;
     overflow-y: auto;
     padding-right: 10px;
 }
