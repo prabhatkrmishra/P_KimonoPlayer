@@ -1,6 +1,19 @@
 /* All Songs Section */
+
+.filter-container {
+    width: 100%;
+}
+
+.filter-select {
+    width: 30%;
+}
+
+.search-song-container {
+    width: 70%;
+}
+
 .songs-list {
-    height: 69vh;
+    height: 62vh;
     overflow-y: auto;
     padding-right: 10px;
 }

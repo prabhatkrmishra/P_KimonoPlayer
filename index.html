@@ -72,34 +72,54 @@
                 <div class="section-header">
                     <h2><i class="fas fa-play-circle"></i> Now Playing</h2>
                 </div>
-                <div class="song-card" id="song-card">
-                    <div class="album-art">
-                        <img id="current-song-img"
-                            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
-                            alt="Album Art">
-                        <div class="vinyl-record"></div>
-                    </div>
-                    <div class="song-info">
-                        <h3 id="current-song-name">Select a Song</h3>
-                        <p id="current-song-artist">Artist Name</p>
-                        <div class="song-genre">
-                            <span id="current-song-genre">Genre</span>
+
+
+                <div class="song-card-container" id="song-card-container">
+
+                    <div class="song-card" id="song-card">
+                        <div class="album-art">
+                            <img id="current-song-img"
+                                src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745" alt="Album Art">
+                        </div>
+
+                        <div class="song-info">
+                            <div class="song-info-text">
+                                <h3 id="current-song-name">Song Name</h3>
+                                <p id="current-song-artist">Artist Name</p>
+                            </div>
+                            <div class="song-genre">
+                                <span id="current-song-genre">Genre</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="player-controls">
-                        <button id="prev-btn" class="control-btn" title="Previous">
-                            <i class="fas fa-step-backward"></i>
-                        </button>
-                        <button id="play-btn" class="control-btn play-btn" title="Play">
-                            <i class="fas fa-play"></i>
-                        </button>
-                        <button id="next-btn" class="control-btn" title="Next">
-                            <i class="fas fa-step-forward"></i>
-                        </button>
+                    <div class="song-utility">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress" id="progress"></div>
+                            </div>
+                            <div class="progress-time">
+                                <span id="current-time">0:00</span>
+                                <span id="total-time">0:00</span>
+                            </div>
+                        </div>
+
+                        <div class="player-controls">
+                            <button id="prev-btn" class="control-btn" title="Previous">
+                                <i class="fas fa-step-backward"></i>
+                            </button>
+                            <button id="play-btn" class="control-btn play-btn" title="Play">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button id="next-btn" class="control-btn" title="Next">
+                                <i class="fas fa-step-forward"></i>
+                            </button>
+                        </div>
                     </div>
 
+
                     <div class="playlist-add-section">
+                        <p class="hint">Select a playlist and click Add</p>
                         <div class="add-to-playlist">
                             <select id="playlist-select" class="playlist-select">
                                 <option value="">Add to Playlist</option>
@@ -107,17 +127,6 @@
                             <button id="add-to-playlist-btn" class="btn-add">
                                 <i class="fas fa-plus"></i> Add
                             </button>
-                        </div>
-                        <p class="hint">Select a playlist and click Add</p>
-                    </div>
-
-                    <div class="progress-container">
-                        <div class="progress-time">
-                            <span id="current-time">0:00</span>
-                            <span id="total-time">0:00</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress" id="progress"></div>
                         </div>
                     </div>
                 </div>
